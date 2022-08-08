@@ -4,14 +4,62 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 
-class SearchEngine(sourceFiles: Array<File>) {
+class SearchEngine {
     private val invertedIndex = hashMapOf<String, LinkedList<String>>()
-    private val stemmer = PorterStemmer()
 
-    init { addSourceFiles(sourceFiles) }
+    companion object {
+        private val stemmer = PorterStemmer()
+    }
 
-    fun search(word: String): String? {
-        return invertedIndex.getOrDefault(word.cleanWord(), null)?.toString()
+    constructor(sourceFiles: Array<File>) {
+        addSourceFiles(sourceFiles)
+    }
+
+    constructor(sourceFile: File) {
+        addSourceFile(sourceFile)
+    }
+
+    fun search(query: String): HashSet<String> {
+        val allWords = query.split("\\s+".toRegex())
+        val finalFoundedFiles = HashSet<String>()
+
+        val wordsWithoutPrefix = allWords.filter { word -> !word.startsWith('+') && !word.startsWith('-') }
+        includeAllTogether(finalFoundedFiles, wordsWithoutPrefix)
+
+        val wordsWithPlusPrefix = allWords.filter { word -> word.startsWith('+') }
+        includeAll(finalFoundedFiles, wordsWithPlusPrefix)
+
+        val wordsWithMinusPrefix = allWords.filter { word -> word.startsWith('-') }
+        excludeAll(finalFoundedFiles, wordsWithMinusPrefix)
+
+        return finalFoundedFiles
+    }
+
+    private fun includeAllTogether(resultFile: HashSet<String>, words: List<String>) {
+        for (word in words) {
+            searchSingleWord(word)?.let { foundedFile ->
+                if (resultFile.isEmpty())
+                    resultFile.addAll(foundedFile)
+                else
+                    resultFile.retainAll(foundedFile)
+            }
+        }
+    }
+
+    private fun includeAll(resultFile: HashSet<String>, words: List<String>) {
+        for (word in words) {
+            searchSingleWord(word)?.let { foundedFiles -> resultFile.addAll(foundedFiles) }
+        }
+    }
+
+    private fun excludeAll(resultFile: HashSet<String>, words: List<String>) {
+        for (word in words) {
+            searchSingleWord(word)?.let { foundedFiles -> resultFile.removeAll(foundedFiles) }
+        }
+    }
+
+    private fun searchSingleWord(query: String): LinkedList<String>? {
+        return invertedIndex.getOrDefault(cleanWord(query), null)
     }
 
     fun addSourceFiles(sourceFiles: Array<File>) {
@@ -21,18 +69,18 @@ class SearchEngine(sourceFiles: Array<File>) {
     fun addSourceFile(sourceFile: File) {
         val path = Paths.get(sourceFile.path)
         Files.lines(path).use { stream ->
-            stream.forEach { line: String -> foo(line, sourceFile.nameWithoutExtension)}
+            stream.forEach { line: String -> record(line, sourceFile.nameWithoutExtension) }
         }
     }
 
-    private fun foo(text: String, documentName: String) {
-        text.split(" ").forEach { word ->
-            val cleanedWord = word.cleanWord()
+    private fun record(text: String, documentName: String) {
+        text.split("\\s+".toRegex()).forEach { word ->
+            val cleanedWord = cleanWord(word)
             cleanedWord?.let { invertedIndex.getOrPut(it) { LinkedList<String>() }.add(documentName) }
         }
     }
 
-    private fun String.cleanWord(): String? = this.lowercase().removeWordNoise()?.steam()
+    private fun cleanWord(word: String): String? = word.lowercase().removeWordNoise()?.steam()
     private fun String.steam(): String = stemmer.stem(this)
 
     private fun String.removeWordNoise(): String? {
