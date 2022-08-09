@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
     implementation("org.apache.opennlp:opennlp-tools:2.0.0")
+    testImplementation("junit:junit:4.13.1")
     testImplementation(kotlin("test"))
 }
 
