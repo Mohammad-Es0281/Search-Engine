@@ -19,6 +19,17 @@ class SearchEngine {
         addSourceFile(sourceFile)
     }
 
+    fun addSourceFiles(sourceFiles: Array<File>) {
+        sourceFiles.forEach { addSourceFile(it) }
+    }
+
+    fun addSourceFile(sourceFile: File) {
+        val path = Paths.get(sourceFile.path)
+        Files.lines(path).use { stream ->
+            stream.forEach { line: String -> record(line, sourceFile.nameWithoutExtension) }
+        }
+    }
+
     fun search(query: String): HashSet<String> {
         val allWords = query.split("\\s+".toRegex())
         val finalFoundedFiles = HashSet<String>()
@@ -60,17 +71,6 @@ class SearchEngine {
 
     private fun searchSingleWord(query: String): LinkedList<String>? {
         return invertedIndex.getOrDefault(cleanWord(query), null)
-    }
-
-    fun addSourceFiles(sourceFiles: Array<File>) {
-        sourceFiles.forEach { addSourceFile(it) }
-    }
-
-    fun addSourceFile(sourceFile: File) {
-        val path = Paths.get(sourceFile.path)
-        Files.lines(path).use { stream ->
-            stream.forEach { line: String -> record(line, sourceFile.nameWithoutExtension) }
-        }
     }
 
     private fun record(text: String, documentName: String) {
