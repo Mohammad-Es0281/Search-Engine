@@ -30,6 +30,7 @@ class SearchEngine {
         }
     }
 
+    // \\s+ regular expression will remove all whitespaces
     fun search(query: String): HashSet<String> {
         val allWords = query.split("\\s+".toRegex())
         val finalFoundedFiles = HashSet<String>()
@@ -83,6 +84,7 @@ class SearchEngine {
     private fun cleanWord(word: String): String? = word.lowercase().removeWordNoise()?.steam()
     private fun String.steam(): String = stemmer.stem(this)
 
+    // Noise = nonLetter characters like parenthesis, dots or anything else.
     private fun String.removeWordNoise(): String? {
         val isNotLetter = { input: Char -> !input.isLetter() }
         return dropWhile(isNotLetter).run { dropLastWhile(isNotLetter) }.ifBlank { null }
