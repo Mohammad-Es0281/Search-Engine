@@ -19,6 +19,18 @@ class SearchEngine {
         addSourceFile(sourceFile)
     }
 
+    fun addSourceFiles(sourceFiles: Array<File>) {
+        sourceFiles.forEach { addSourceFile(it) }
+    }
+
+    fun addSourceFile(sourceFile: File) {
+        val path = Paths.get(sourceFile.path)
+        Files.lines(path).use { stream ->
+            stream.forEach { line: String -> record(line, sourceFile.nameWithoutExtension) }
+        }
+    }
+
+    // \\s+ regular expression will remove all whitespaces
     fun search(query: String): HashSet<String> {
         val allWords = query.split("\\s+".toRegex())
         val finalFoundedFiles = HashSet<String>()
@@ -62,17 +74,6 @@ class SearchEngine {
         return invertedIndex.getOrDefault(cleanWord(query), null)
     }
 
-    fun addSourceFiles(sourceFiles: Array<File>) {
-        sourceFiles.forEach { addSourceFile(it) }
-    }
-
-    fun addSourceFile(sourceFile: File) {
-        val path = Paths.get(sourceFile.path)
-        Files.lines(path).use { stream ->
-            stream.forEach { line: String -> record(line, sourceFile.nameWithoutExtension) }
-        }
-    }
-
     private fun record(text: String, documentName: String) {
         text.split("\\s+".toRegex()).forEach { word ->
             val cleanedWord = cleanWord(word)
@@ -83,6 +84,7 @@ class SearchEngine {
     private fun cleanWord(word: String): String? = word.lowercase().removeWordNoise()?.steam()
     private fun String.steam(): String = stemmer.stem(this)
 
+    // Noise = nonLetter characters like parenthesis, dots or anything else.
     private fun String.removeWordNoise(): String? {
         val isNotLetter = { input: Char -> !input.isLetter() }
         return dropWhile(isNotLetter).run { dropLastWhile(isNotLetter) }.ifBlank { null }
