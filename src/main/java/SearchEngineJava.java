@@ -24,16 +24,25 @@ public class SearchEngineJava {
         String[] allWords = query.split("\\s+");
         HashSet<String> finalFoundedFiles = new HashSet<>();
 
-        HashSet<String> wordsWithoutPrefix = new HashSet<>(Arrays.stream(allWords).filter(word -> !word.startsWith("+") && !word.startsWith("-")).toList());
+        HashSet<String> wordsWithoutPrefix = filterSet(allWords, word -> !word.startsWith("+") && !word.startsWith("-"));
         includeAllTogether(finalFoundedFiles, wordsWithoutPrefix);
 
-        HashSet<String> wordsWithPlusPrefix = new HashSet<>(Arrays.stream(allWords).filter(word -> word.startsWith("+")).toList());
+        HashSet<String> wordsWithPlusPrefix = filterSet(allWords, word -> word.startsWith("+"));
         includeAll(finalFoundedFiles, wordsWithPlusPrefix);
 
-        HashSet<String> wordsWithMinusPrefix = new HashSet<>(Arrays.stream(allWords).filter(word -> word.startsWith("-")).toList());
+        HashSet<String> wordsWithMinusPrefix = filterSet(allWords, word -> word.startsWith("-"));
         excludeAll(finalFoundedFiles, wordsWithMinusPrefix);
 
         return finalFoundedFiles;
+    }
+
+    private HashSet<String> filterSet(String[] set, Predicate<String> predicate) {
+        HashSet<String> resultSet = new HashSet<>();
+        for (String word : set) {
+            if (predicate.test(word))
+                resultSet.add(word);
+        }
+        return resultSet;
     }
 
     private void includeAllTogether(HashSet<String> resultFile, HashSet<String> words) {
@@ -104,18 +113,20 @@ public class SearchEngineJava {
         return dropFirstNoise(dropLsatNoise(word));
     }
 
-    private final Predicate<Character> isNotLetter = character -> !((character >= 65 && character <= 90) || (character >= 97 && character <= 122));
+    private boolean isNotLetter(char c) {
+        return !((c >= 65 && c <= 90) || (c >= 97 && c <= 122));
+    }
 
     private String dropLsatNoise(String word) {
         int index = word.length() - 1;
-        while (index != -1 && isNotLetter.test(word.charAt(index)))
+        while (index != -1 && isNotLetter(word.charAt(index)))
             index--;
         return word.substring(0, index + 1);
     }
 
     private String dropFirstNoise(String word){
         int index = 0;
-        while (index != word.length() && isNotLetter.test(word.charAt(index)))
+        while (index != word.length() && isNotLetter(word.charAt(index)))
             index++;
         return word.substring(index);
     }
