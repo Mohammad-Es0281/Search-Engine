@@ -7,7 +7,7 @@ import java.util.function.*;
 import java.util.stream.*;
 
 public class SearchEngineJava {
-    private final HashMap<String, LinkedList<String>> invertedIndex = new HashMap<>();
+    private final HashMap<String, HashSet<String>> invertedIndex = new HashMap<>();
 
     private final PorterStemmer stemmer = new PorterStemmer();
 
@@ -47,7 +47,7 @@ public class SearchEngineJava {
 
     private void includeAllTogether(HashSet<String> resultFile, HashSet<String> words) {
         for (String word : words) {
-            LinkedList<String> foundedFiles = searchSingleWord(word);
+            HashSet<String> foundedFiles = searchSingleWord(word);
             if (foundedFiles != null) {
                 if (resultFile.isEmpty())
                     resultFile.addAll(foundedFiles);
@@ -59,19 +59,19 @@ public class SearchEngineJava {
 
     private void includeAll(HashSet<String> resultFile, HashSet<String> words) {
         for (String word : words) {
-            LinkedList<String> foundedFiles = searchSingleWord(word);
+            HashSet<String> foundedFiles = searchSingleWord(word);
             resultFile.addAll(foundedFiles);
         }
     }
 
     private void excludeAll(HashSet<String> resultFile, HashSet<String> words) {
         for (String word : words) {
-            LinkedList<String> foundedFiles = searchSingleWord(word);
+            HashSet<String> foundedFiles = searchSingleWord(word);
             foundedFiles.forEach(resultFile::remove);
         }
     }
 
-    private LinkedList<String> searchSingleWord(String query) {
+    private HashSet<String> searchSingleWord(String query) {
         return invertedIndex.getOrDefault(cleanWord(query), null);
     }
 
@@ -92,11 +92,11 @@ public class SearchEngineJava {
         for (String word : text.split("\\s+")) {
             String cleanedWord = cleanWord(word);
             if (cleanedWord != null) {
-                LinkedList<String> documents = invertedIndex.get(cleanedWord);
+                HashSet<String> documents = invertedIndex.get(cleanedWord);
                 if (documents != null)
                     documents.add(documentName);
                 else {
-                    documents = new LinkedList<>();
+                    documents = new HashSet<>();
                     documents.add(documentName);
                     invertedIndex.put(cleanedWord, documents);
                 }
